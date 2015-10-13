@@ -1007,7 +1007,6 @@ def process_single_css_file(css_file_path):
         taim = "/* {} */ ".format(datetime.now().isoformat()[:-7].lower())
         minified_css = taim + minified_css
     min_css_file_path = args.outfile
-        log.debug("OUTPUT: Writing gZIP CSS Minified {}.".format(gz_file_path))
     try:
         with open(min_css_file_path, "w", encoding="utf-8") as output_file:
             output_file.write(minified_css)
