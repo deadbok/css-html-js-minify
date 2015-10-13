@@ -1400,15 +1400,14 @@ def main():
         log.info(getoutput(str(args.before)))
     if args and only_on_py3(args.quiet):
         log.disable(log.CRITICAL)
-    check_working_folder(os.path.dirname(args.fullpath))
+    check_working_folder(os.path.dirname(args.infile))
     # Work based on if argument is file or folder, folder is slower.
     if os.path.isfile(args.infile) and args.infile.endswith(".css"):
         log.info("Target is a CSS File.")
         list_of_files = str(args.infile)
         process_single_css_file(args.infile)
-    elif os.path.isfile(args.infile) and args.infile.endswith(
-            ".html" if args.overwrite else ".htm"):
-        log.info("Target is HTM{} File.".format("L" if args.overwrite else ""))
+    elif os.path.isfile(args.infile) and args.infile.endswith(".html"):
+        log.info("Target is HTML File.".format("L" if args.overwrite else ""))
         list_of_files = str(args.infile)
         process_single_html_file(args.infile)
     elif os.path.isfile(args.infile) and args.infile.endswith(".js"):
