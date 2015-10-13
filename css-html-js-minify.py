@@ -48,9 +48,11 @@ __version__ = '1.2.0'
 __license__ = 'GPLv3+ LGPLv3+'
 __author__ = 'Juan Carlos'
 __email__ = 'juancarlospaco@gmail.com'
-__url__ = 'https://github.com/juancarlospaco/css-html-js-minify'
-__source__ = ('https://raw.githubusercontent.com/juancarlospaco/'
-              'css-html-js-minify/master/css-html-js-minify.py')
+# Minor modifications by Martin Grønholdt, to suit my needs.
+# I am not changing the above though. I do not want to take credit,
+# for this great work.
+__url__ = 'https://github.com/deadbok/css-html-js-minify'
+__source__ = ('https://raw.githubusercontent.com/deadbok/css-html-js-minify/master/css-html-js-minify.py')
 
 
 EXTENDED_NAMED_COLORS, start_time = {  # 'Color Name String': (R, G, B)
@@ -1004,13 +1006,7 @@ def process_single_css_file(css_file_path):
     if args.timestamp:
         taim = "/* {} */ ".format(datetime.now().isoformat()[:-7].lower())
         minified_css = taim + minified_css
-    min_css_file_path = prefixer_extensioner(
-        css_file_path, ".css", ".css" if args.overwrite else ".min.css",
-        original_css)
-    if only_on_py3(args.gzip):
-        gz_file_path = prefixer_extensioner(
-            css_file_path, ".css",
-            ".css.gz" if args.overwrite else ".min.css.gz", original_css)
+    min_css_file_path = args.outfile
         log.debug("OUTPUT: Writing gZIP CSS Minified {}.".format(gz_file_path))
     try:
         with open(min_css_file_path, "w", encoding="utf-8") as output_file:
@@ -1039,8 +1035,7 @@ def process_single_html_file(html_file_path):
             minified_html = html_minify(html_file.read(),
                                         comments=only_on_py3(args.comments))
     log.debug("INPUT: Reading HTML file {}.".format(html_file_path))
-    html_file_path = prefixer_extensioner(
-        html_file_path, ".html" if args.overwrite else ".htm", ".html")
+    html_file_path = args.outfile
     try:  # Python3
         with open(html_file_path, "w", encoding="utf-8") as output_file:
             output_file.write(minified_html)
@@ -1067,14 +1062,7 @@ def process_single_js_file(js_file_path):
     if args.timestamp:
         taim = "/* {} */ ".format(datetime.now().isoformat()[:-7].lower())
         minified_js = taim + minified_js
-    min_js_file_path = prefixer_extensioner(
-        js_file_path, ".js", ".js" if args.overwrite else ".min.js",
-        original_js)
-    if only_on_py3(args.gzip):
-        gz_file_path = prefixer_extensioner(
-            js_file_path, ".js", ".js.gz" if args.overwrite else ".min.js.gz",
-            original_js)
-        log.debug("OUTPUT: Writing gZIP JS Minified {}.".format(gz_file_path))
+    min_js_file_path = args.outfile
     try:  # Python3
         with open(min_js_file_path, "w", encoding="utf-8") as output_file:
             output_file.write(minified_js)
@@ -1350,8 +1338,10 @@ def make_arguments_parser():
     CSS Properties are Alpha-Sorted, to help spot cloned ones, Selectors not.
     Watch works for whole folders, with minimum of ~60 Secs between runs.""")
     parser.add_argument('--version', action='version', version=__version__)
-    parser.add_argument('fullpath', metavar='fullpath', type=str,
-                        help='Full path to local file or folder.')
+    parser.add_argument('infile', metavar='infile', type=str,
+                        help='Input file.')
+    parser.add_argument('outfile', metavar='outfile', type=str,
+                        help='Output file.')
     parser.add_argument('--wrap', action='store_true',
                         help="Wrap output to ~80 chars per line, CSS only.")
     parser.add_argument('--prefix', type=str,
@@ -1413,34 +1403,21 @@ def main():
         log.disable(log.CRITICAL)
     check_working_folder(os.path.dirname(args.fullpath))
     # Work based on if argument is file or folder, folder is slower.
-    if os.path.isfile(args.fullpath) and args.fullpath.endswith(".css"):
+    if os.path.isfile(args.infile) and args.infile.endswith(".css"):
         log.info("Target is a CSS File.")
-        list_of_files = str(args.fullpath)
-        process_single_css_file(args.fullpath)
-    elif os.path.isfile(args.fullpath) and args.fullpath.endswith(
+        list_of_files = str(args.infile)
+        process_single_css_file(args.infile)
+    elif os.path.isfile(args.infile) and args.infile.endswith(
             ".html" if args.overwrite else ".htm"):
         log.info("Target is HTM{} File.".format("L" if args.overwrite else ""))
-        list_of_files = str(args.fullpath)
-        process_single_html_file(args.fullpath)
-    elif os.path.isfile(args.fullpath) and args.fullpath.endswith(".js"):
+        list_of_files = str(args.infile)
+        process_single_html_file(args.infile)
+    elif os.path.isfile(args.infile) and args.infile.endswith(".js"):
         log.info("Target is a JS File.")
-        list_of_files = str(args.fullpath)
-        process_single_js_file(args.fullpath)
-    elif os.path.isdir(args.fullpath):
-        log.info("Target is a Folder with CSS, HTM{}, JS files !.".format(
-            "L" if args.overwrite else ""))
-        log.warning("Processing a whole Folder may take some time...")
-        list_of_files = walkdir_to_filelist(
-            args.fullpath,
-            (".css", ".js", ".html" if args.overwrite else ".htm"),
-            (".min.css", ".min.js", ".htm" if args.overwrite else ".html"))
-        log.info('Total Maximum CPUs used: ~{} Cores.'.format(cpu_count()))
-        pool = Pool(cpu_count())  # Multiprocessing Async
-        pool.map_async(process_multiple_files, list_of_files)
-        pool.close()
-        pool.join()
+        list_of_files = str(args.infile)
+        process_single_js_file(args.infile)
     else:
-        log.critical("File or folder not found,or cant be read,or I/O Error.")
+        log.critical("File not found,or cant be read,or I/O Error.")
         sys.exit(1)
     if only_on_py3((args.after, getoutput)):
         log.info(getoutput(str(args.after)))
